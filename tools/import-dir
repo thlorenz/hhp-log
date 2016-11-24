@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+const path = require('path')
+const fs = require('fs')
+const hhp = require('hhp')
+const log = require('./log')
+
+const dirname = process.argv[2]
+
+const files = fs.readdirSync(dirname)
+  .map(x => path.join(dirname, x))
+
+function addNext(err) {
+  if (err) return console.error(err)
+
+  const next = files.shift()
+  if (!next) return
+
+  const src = fs.readFileSync(next, 'utf8')
+  const handHistories = hhp.extractHands(src)
+  console.error('Parsing %d hand histories from %s', handHistories.length, path.basename(next))
+
+  const parsed = handHistories.map(hhp).filter(x => !!x)
+  console.error('Adding %d parsed hands', parsed.length)
+
+  log.addHands(parsed, addNext)
+}
+
+addNext()

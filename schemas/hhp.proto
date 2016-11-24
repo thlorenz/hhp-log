@@ -1,0 +1,104 @@
+syntax = "proto2";
+
+/* money */
+/* Type added via money encoder/decoder which uses int32 to store floats
+ * with 2 decimal places.
+ * This avoids JS rounding errors and saves space.
+ */
+
+message metadata {
+  optional int32 lineno = 0;
+  optional string raw = 1;
+}
+
+message info {
+  optional string room = 0;
+  optional string handid = 1;
+  optional string gametype = 2;
+  optional string gameno = 3;
+  optional string currency = 4;
+  optional money donation = 5;
+  optional money rake = 6;
+  optional money buyin = 7;
+  optional string pokertype = 8;
+  optional string limit = 9;
+  optional string level = 10;
+  optional money sb = 11;
+  optional money bb = 12;
+  optional int32 year = 13;
+  optional int32 month = 14;
+  optional int32 day = 15;
+  optional int32 hour = 16;
+  optional int32 min = 17;
+  optional int32 sec = 18;
+  optional string timezone = 19;
+  optional money ante = 20;
+  optional metadata metadata = 21;
+}
+
+message table {
+  optional int32 tableno = 0;
+  optional int32 maxseats = 1;
+  optional int32 button = 2;
+  optional metadata metadata = 3;
+}
+
+message holecards {
+  optional string card1 = 0;
+  optional string card2 = 1;
+  optional metadata metadata = 2;
+}
+
+message board {
+  optional string card1 = 0;
+  optional string card2 = 1;
+  optional string card3 = 2;
+  optional string card4 = 3;
+  optional string card5 = 4;
+  optional metadata metadata = 5;
+}
+
+message seat {
+  optional int32 seatno = 0;
+  optional string player = 1;
+  optional money chips = 2;
+  optional metadata metadata = 3;
+}
+
+message action {
+  optional string player = 0;
+  optional string type = 1;
+  optional money amount = 2;
+  optional money raiseTo = 3;
+  optional bool allin = 4;
+  optional metadata metadata = 8;
+}
+
+
+message showdown_action {
+  optional string player = 0;
+  optional string type = 1;
+  optional money amount = 2;
+  optional money raiseTo = 3;
+  optional bool allin = 4;
+  optional string card1 = 5;
+  optional string card2 = 6;
+  optional string desc = 7;
+  optional metadata metadata = 8;
+}
+
+message entry {
+  optional info info = 0;
+  optional table table = 1;
+  optional holecards holecards = 2;
+  optional string hero = 3;
+  optional board board = 4;
+  repeated seat seats = 5;
+  repeated action posts = 6;
+  repeated action preflop = 7;
+  repeated action flop = 8;
+  repeated action turn = 9;
+  repeated action river = 10;
+  repeated showdown_action showdown = 11;
+  optional int32 version = 12;
+}

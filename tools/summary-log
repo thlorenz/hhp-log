@@ -1,0 +1,12 @@
+#!/usr/bin/env node
+
+require('./log').summary(onsummary)
+
+function inspect(obj, depth) {
+  console.log(require('util').inspect(obj, false, depth || 5, true))
+}
+
+function onsummary(err, entries) {
+  if (err) return console.error(err)
+  inspect(entries)
+}

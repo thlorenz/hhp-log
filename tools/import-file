@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+const path = require('path')
+const hhp = require('hhp')
+const log = require('./log')
+
+const filename = process.argv[2]
+
+const src = fs.readFileSync(filename, 'utf8')
+const handHistories = hhp.extractHands(src)
+console.error('Parsing %d hand histories from %s', handHistories.length, path.basename(filename))
+
+const parsed = handHistories.map(hhp).filter(x => !!x)
+console.error('Adding %d parsed hands', parsed.length)
+
+log.addHands(parsed, onadded)
+
+function onadded() {
+  console.log('done')
+}
