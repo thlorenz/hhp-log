@@ -5,6 +5,8 @@ const fs = require('fs')
 const hhp = require('hhp')
 const log = require('./log')
 
+const { getFileSrc } = require('./utils')
+
 const dirname = process.argv[2]
 
 const files = fs.readdirSync(dirname)
@@ -16,14 +18,19 @@ function addNext(err) {
   const next = files.shift()
   if (!next) return
 
-  const src = fs.readFileSync(next, 'utf8')
-  const handHistories = hhp.extractHands(src)
-  console.error('Parsing %d hand histories from %s', handHistories.length, path.basename(next))
+  getFileSrc(next, onfileSrc)
 
-  const parsed = handHistories.map(hhp).filter(x => !!x)
-  console.error('Adding %d parsed hands', parsed.length)
+  function onfileSrc(err, src) {
+    if (err) return console.error(err)
 
-  log.addHands(parsed, addNext)
+    const handHistories = hhp.extractHands(src.toString())
+    console.error('Parsing %d hand histories from %s', handHistories.length, path.basename(next))
+
+    const parsed = handHistories.map(hhp).filter(x => !!x)
+    console.error('Adding %d parsed hands', parsed.length)
+
+    log.addHands(parsed, addNext)
+  }
 }
 
 addNext()
