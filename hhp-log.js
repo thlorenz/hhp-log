@@ -6,6 +6,7 @@ const fs = require('fs')
 const path = require('path')
 const protobuf = require('protocol-buffers')
 const money = require('money-encoder')
+const from2 = require('from2')
 
 const VERSION = 1
 const messages = protobuf(
@@ -23,6 +24,15 @@ function entryId(info) {
 
 function getTimeStamp(info) {
   return new Date(info.year, info.month - 1, info.day, info.hour, info.min, info.sec)
+}
+
+function keyStream({ log, keys }) {
+  var i = 0
+  function onobj(size, cb) {
+    if (i === keys.length) return cb(null, null)
+    log.get(keys[i++], cb)
+  }
+  return from2.obj(onobj)
 }
 
 class ParsedHandsLog extends EventEmitter {
@@ -70,9 +80,14 @@ class ParsedHandsLog extends EventEmitter {
     }
   }
 
-  tail({ live, encoding } = {}) {
-    return this._log
-      .createReadStream({ live, valueEncoding: encoding })
+  tail({ live, encoding, keys } = {}) {
+    if (live && keys) {
+      throw new Error('Cannot tail when keys are supplied')
+    }
+    return keys
+      ? keyStream({ log: this._log, keys })
+      : this._log
+          .createReadStream({ live, valueEncoding: encoding })
   }
 
   dump() {
