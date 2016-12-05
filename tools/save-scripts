@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+
+const hha = require('hha')
+const { save } = require('./utils')
+const start = parseInt(process.argv[2])
+const end = parseInt(process.argv[3])
+
+if (!start || !end) {
+  console.error('Need start and end')
+  process.exit()
+}
+
+if (start >= end) {
+  console.error('end needs to be greater than start')
+  process.exit()
+}
+
+const stream = require('./log')
+  .tail()
+  .on('data', onhand)
+
+let count = 0
+
+function simplePad(c) {
+  if (c < 10) return '000' + c
+  if (c < 100) return '00' + c
+  if (c < 1000) return '0' + c
+  return c
+}
+
+function onhand(h) {
+  count++
+  if (count < start) return
+  if (count >= end) {
+    stream.end()
+  }
+
+  const analyzed = hha(h.value)
+  const script = hha.script(analyzed)
+
+  save(`hha.script.${simplePad(count)}`, script)
+}
