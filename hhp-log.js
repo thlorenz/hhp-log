@@ -2,15 +2,13 @@
 
 const EventEmitter = require('events').EventEmitter
 const hyperlog = require('hyperlog')
-const fs = require('fs')
-const path = require('path')
 const protobuf = require('protocol-buffers')
 const money = require('money-encoder')
 const from2 = require('from2')
 
 const VERSION = 1
 const messages = protobuf(
-    fs.readFileSync(path.join(__dirname, 'schemas', 'hhp.proto'))
+    require('./schemas/hhp.proto')
   , { encodings: { money } }
 )
 
@@ -35,28 +33,45 @@ function keyStream({ log, keys }) {
   return from2.obj(onobj)
 }
 
+// TODO: need to somehow keep indexes:
+//  - tourney#
+//  - game#
+//  - date+time (for ranges)
+// Not sure if to store in separate log or just keep in memory and up to date, so
+// consumer can store the index however they please.
+//
 class ParsedHandsLog extends EventEmitter {
-  constructor(db) {
+  constructor(db, { encoding = messages.entry } = {}) {
     super()
-    this._log = hyperlog(db, { valueEncoding: messages.entry })
+    this._log = hyperlog(db, { valueEncoding: encoding })
     this._log.on('add', n => this.emit('add', n))
     this._hands = new Set()
+    this._initialized = false
   }
 
   addHands(hands, done) {
+    const self = this
+    // add them one after the other
+    let errored = false
     let tasks = hands.length
     if (!tasks) return done()
-    for (var i = 0; i < hands.length; i++) {
-      this.addHand(hands[i], onadded)
+    let i = 0
+
+    function onadded(err) {
+      if (errored) return
+      if (err) {
+        errored = true
+        return done(err)
+      }
+      if (++i === tasks) return done()
+      self.addHand(hands[i], onadded)
     }
 
-    function onadded() {
-      if (!--tasks) done()
-    }
+    this.addHand(hands[i], onadded)
   }
 
   addHand(hand, done) {
-    if (this._initialized) return this._append(hand, done)
+    if (this._initialized) return setTimeout(() => this._append(hand, done), 0)
     this._init(err => {
       if (err) return done(err)
       this._append(hand, done)
@@ -73,9 +88,10 @@ class ParsedHandsLog extends EventEmitter {
       this._log.append(
           Object.assign({}, hand, { version: VERSION })
         , null
-        , err => { this._onadded(err, hand); done() }
+        , err => { this._onadded(err, hand); done(err) }
       )
     } else {
+      this.emit('skipped', hand)
       done()
     }
   }
@@ -89,6 +105,11 @@ class ParsedHandsLog extends EventEmitter {
       : this._log
           .createReadStream({ live, valueEncoding: encoding })
   }
+
+  /*range({ from, to }, cb) {
+    this._log
+      .createReadStream({ live, valueEncoding: encoding })
+  }*/
 
   dump() {
     this.tail()
@@ -113,6 +134,8 @@ class ParsedHandsLog extends EventEmitter {
   }
 
   _init(cb) {
+    this.emit('initializing')
+
     // Called the first time a hand is added to avoid adding duplicates.
     // tail through all entries in the db and do the following
     //  - record the newest entry time
@@ -120,13 +143,18 @@ class ParsedHandsLog extends EventEmitter {
     this.tail()
       .on('data', x => this._trackHand(x.value.info))
       .on('error', cb)
-      .on('end', x => { this._initialized = true; cb() })
+      .on('end', x => {
+        this._initialized = true
+        this.emit('initialized')
+        cb()
+      })
   }
 
   _trackHand(info) {
     const timestamp = getTimeStamp(info)
     if (this._newest == null || timestamp > this._newest) this._newest = timestamp
     this._hands.add(entryId(info))
+    this.emit('tracked', this._hands.size)
   }
 
   _onadded(err, hand) {
@@ -134,6 +162,7 @@ class ParsedHandsLog extends EventEmitter {
       this._hands.delete(entryId(hand.info))
       return this.emit('error', err)
     }
+    this.emit('added', hand)
   }
 }
 
