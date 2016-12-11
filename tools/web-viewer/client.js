@@ -4,26 +4,35 @@
 const { h, render } = require('preact')
 require('preact/devtools')
 
+const hyper = false
+const showSummary = true
+
+const HyperLog = require('../../stores/hyperlog')
+const LevelUp = require('../../stores/levelup')
+
 const fruitdown = require('fruitdown')
-const levelup = require('levelup')
-const db = levelup('pokertell:parsed', { db: fruitdown })
-const log = require('../../')(db)
+const opts = {
+    leveldown: fruitdown
+  , location: 'pokertell:parsed'
+  , encoding: require('../../default-encoding')
+}
+const store = hyper ? new HyperLog(opts) : new LevelUp(opts)
+const log = require('../../')({ log: store })
 const HandHistoryImporter = require('./components/hh-importer')
-const HandHistoryExplorer = require('./components/hh-explorer')
+// const HandHistoryExplorer = require('./components/hh-explorer') <HandHistoryExplorer log={log} />
 
 render(
   <div>
     <HandHistoryImporter
       ondestroy={destroyDatabase}
       log={log}
-      showSummary={true} />
+      showSummary={showSummary} />
   </div>
 , document.body
 )
 
-// <HandHistoryExplorer log={log} />
 function destroyDatabase() {
-  fruitdown.destroy(db.db, err => {
+  store.destroy(err => {
     if (err) return console.error(err)
     console.log('db destroyed')
   })

@@ -1,17 +1,9 @@
 'use strict'
 
 const EventEmitter = require('events').EventEmitter
-const hyperlog = require('hyperlog')
-const protobuf = require('protocol-buffers')
-const money = require('money-encoder')
 const from2 = require('from2')
 
 const VERSION = 1
-const messages = protobuf(
-    require('./schemas/hhp.proto')
-  , { encodings: { money } }
-)
-
 function inspect(obj, depth) {
   console.log(require('util').inspect(obj, false, depth || 5, true))
 }
@@ -28,7 +20,7 @@ function keyStream({ log, keys }) {
   var i = 0
   function onobj(size, cb) {
     if (i === keys.length) return cb(null, null)
-    log.get(keys[i++], cb)
+    log.get(keys[i++], null, cb)
   }
   return from2.obj(onobj)
 }
@@ -41,9 +33,10 @@ function keyStream({ log, keys }) {
 // consumer can store the index however they please.
 //
 class ParsedHandsLog extends EventEmitter {
-  constructor(db, { encoding = messages.entry } = {}) {
+  constructor({ log } = {}) {
     super()
-    this._log = hyperlog(db, { valueEncoding: encoding })
+
+    this._log = log
     this._log.on('add', n => this.emit('add', n))
     this._hands = new Set()
     this._initialized = false
@@ -87,7 +80,7 @@ class ParsedHandsLog extends EventEmitter {
       this._trackHand(hand.info)
       this._log.append(
           Object.assign({}, hand, { version: VERSION })
-        , null
+        , {}
         , err => { this._onadded(err, hand); done(err) }
       )
     } else {
@@ -102,14 +95,8 @@ class ParsedHandsLog extends EventEmitter {
     }
     return keys
       ? keyStream({ log: this._log, keys })
-      : this._log
-          .createReadStream({ live, valueEncoding: encoding })
+      : this._log.createReadStream({ live, encoding })
   }
-
-  /*range({ from, to }, cb) {
-    this._log
-      .createReadStream({ live, valueEncoding: encoding })
-  }*/
 
   dump() {
     this.tail()
@@ -123,6 +110,10 @@ class ParsedHandsLog extends EventEmitter {
       if (err) return cb(err)
       cb(null, this._summary())
     })
+  }
+
+  getHand(h) {
+    return this._log.getHand(h)
   }
 
   _summary() {
@@ -141,7 +132,7 @@ class ParsedHandsLog extends EventEmitter {
     //  - record the newest entry time
     //  - create a set of ids of hands contained
     this.tail()
-      .on('data', x => this._trackHand(x.value.info))
+      .on('data', x => this._trackHand(this._log.getHand(x).info))
       .on('error', cb)
       .on('end', x => {
         this._initialized = true
@@ -166,6 +157,6 @@ class ParsedHandsLog extends EventEmitter {
   }
 }
 
-module.exports = function parsedHandsLog(db) {
-  return new ParsedHandsLog(db)
+module.exports = function parsedHandsLog(opts) {
+  return new ParsedHandsLog(opts)
 }

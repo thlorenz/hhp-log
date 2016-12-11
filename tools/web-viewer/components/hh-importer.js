@@ -15,8 +15,8 @@ class HandHistoryImporter extends Component {
       .on('added', x => this._onadded())
       .on('skipped', x => this._onadded())
       .on('tracked', x => this._updateTracking(x))
-      .on('initializing', x => console.log('initializing'))
-      .on('initialized', x => console.log('initialized'))
+      .on('initializing', () => this._oninitializing())
+      .on('initialized', () => this._oninitialized())
     if (showSummary) this._updateSummary()
   }
 
@@ -40,6 +40,14 @@ class HandHistoryImporter extends Component {
     )
   }
 
+  _oninitializing() {
+    console.time('initialize')
+  }
+
+  _oninitialized() {
+    console.timeEnd('initialize')
+  }
+
   _onfilesSelected() {
     this.setState(Object.assign({}, this.state, { status: 'parsing', importing: true }))
   }
@@ -57,6 +65,7 @@ class HandHistoryImporter extends Component {
   }
 
   _onparsedHands(hands) {
+    console.time('insert')
     this._addingTotal = hands.length
     this._addedSoFar = -1
     this._onadded()
@@ -67,14 +76,15 @@ class HandHistoryImporter extends Component {
   }
 
   _onprocessed() {
+    console.timeEnd('insert')
     this.setState(Object.assign({}, this.state, { importing: false }))
   }
 
   _updateSummary() {
     this._log.summary((err, x) => {
       const s = err
-        ? `Error: ${err.message}`
-        : `Total: ${x.total}`
+        ? `Error ${err.message}`
+        : `Total ${x.total} hands in database, newest is from ${x.newest}`
       this.setState(Object.assign({}, this.state, { summary: s }))
     })
   }

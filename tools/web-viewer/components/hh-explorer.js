@@ -11,12 +11,12 @@ class HandHistoryExplorer extends Component {
     this._log = log
     this.setState(Object.assign({}, this.state, { hands: [] }))
     this._log.tail()
-      .on('data', x => this._addHand(x))
+      .on('data', x => this._addHand(this._log.getHand(x)))
   }
 
   _addHand(h) {
     try {
-      const hand = hha(h.value)
+      const hand = hha(h)
       this.setState(Object.assign({}, this.state, { hands: this.state.hands.concat(hand) }))
     } catch (e) {
       console.error(e)
