@@ -12,6 +12,7 @@
   },
   "homepage": "https://github.com/thlorenz/hhp-log",
   "dependencies": {
+    "concat-stream": "~1.5.2",
     "from2": "~2.3.0",
     "fruitdown": "~1.0.2",
     "hyperlog": "~4.11.0",

@@ -1,5 +1,6 @@
 const EventEmitter = require('events').EventEmitter
 const levelup = require('levelup')
+const concatStream = require('concat-stream')
 const assert = require('assert')
 
 function getKey(value) {
@@ -27,6 +28,20 @@ class LevelUp extends EventEmitter {
     // TODO: https://github.com/dominictarr/level-live-stream
     if (live) throw new Error('live stream not supported ATM')
     return this._db.createValueStream({ gte: since, valueEncoding: encoding })
+  }
+
+  range({ gt, gte, limit, reverse }, cb) {
+    this._db
+      .createReadStream({ gt, gte, limit, reverse })
+      .on('error', cb)
+      .pipe(concatStream(ondone))
+
+    function ondone(res) {
+      const first = res[0]
+      const last = res[res.length - 1]
+      const values = res.map(x => x.value)
+      cb(null, { firstKey: first.key, lastKey: last.key, hands: values })
+    }
   }
 
   get(key, { encoding } = {}, cb) {

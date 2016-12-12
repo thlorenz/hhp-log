@@ -1,5 +1,3 @@
-'use strict'
-
 const EventEmitter = require('events').EventEmitter
 const from2 = require('from2')
 
@@ -96,6 +94,10 @@ class ParsedHandsLog extends EventEmitter {
     return keys
       ? keyStream({ log: this._log, keys })
       : this._log.createReadStream({ live, encoding })
+  }
+
+  range(opts, cb) {
+    return this._log.range(opts, cb)
   }
 
   dump() {
