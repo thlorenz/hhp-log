@@ -23,16 +23,18 @@
     ]
   },
   "devDependencies": {
+    "brfs": "~1.4.3",
     "bubleify": "~0.6.0",
     "budo": "~9.2.2",
-    "standart": "~6.1.0",
-    "brfs": "~1.4.3"
+    "ocat": "~0.1.0",
+    "standart": "~6.1.0"
   },
   "dependencies": {
     "fruitdown": "~1.0.2",
     "hha": "~0.4.0",
     "hha-pokerhand": "thlorenz/hha-pokerhand",
     "hhp": "~0.2.2",
+    "iconv-lite": "~0.4.15",
     "levelup": "~1.3.3",
     "preact": "~7.1.0"
   }

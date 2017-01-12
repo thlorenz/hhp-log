@@ -3,6 +3,7 @@
 /** @jsx h */
 const { h, Component } = require('preact')
 
+const iconv = require('iconv-lite')
 const hhp = require('hhp')
 const MultiFileInput = require('./multi-file-input')
 
@@ -55,7 +56,7 @@ class HandHistoryImporter extends Component {
   _onfilesRead(result) {
     const hands = []
     for (let src of result.values()) {
-      hhp.extractHands(src).forEach(x => hands.push(x))
+      hhp.extractHands(iconv.decode(Buffer.from(src, 'latin1'), 'latin1')).forEach(x => hands.push(x))
     }
     const parsed = hands
       .map(x => this._tryParse(x))

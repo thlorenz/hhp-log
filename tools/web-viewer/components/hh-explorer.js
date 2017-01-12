@@ -3,11 +3,17 @@ const { h, Component } = require('preact')
 const hha = require('hha')
 const { PokerHands } = require('hha-pokerhand')
 
+function emptyString() {
+  return ''
+}
+
 class HandHistoryExplorer extends Component {
-  constructor({ log, limit = 5 }) {
+  constructor({ log, limit = 50, injectHeader = emptyString, injectFooter = emptyString }) {
     super()
     this._log = log
     this._limit = limit
+    this._injectHeader = injectHeader
+    this._injectFooter = injectFooter
     this.setState(Object.assign({}, this.state, { hands: [] }))
     this._keys = []
     this._next()
@@ -41,7 +47,6 @@ class HandHistoryExplorer extends Component {
     this._firstKey = res.firstKey
     this._lastKey = res.lastKey
 
-    console.log({ firstKey: this._firstKey, lastKey: this._lastKey, n: res.hands.length })
     this._displayHands(res.hands)
   }
 
@@ -71,7 +76,12 @@ class HandHistoryExplorer extends Component {
       return (<div>Please hit next or import some hands</div>)
     }
     return (
-      <PokerHands hands={hands} onhandSelected={this._onhandSelected.bind(this)} />
+      <PokerHands
+        hands={hands}
+        onhandSelected={this._onhandSelected.bind(this)}
+        injectHeader={this._injectHeader.bind(this)}
+        injectFooter={this._injectFooter.bind(this)}
+      />
     )
   }
 
