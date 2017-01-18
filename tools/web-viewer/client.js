@@ -4,21 +4,12 @@
 const { h, render } = require('preact')
 require('preact/devtools')
 const ocat = require('ocat')
-
-const hyper = false
 const showSummary = false
 
-const HyperLog = require('../../stores/hyperlog')
-const LevelUp = require('../../stores/levelup')
+const hyper = false
+const location = 'pokertell:parsed'
+const log = require('../../browser-log')({ location, hyper })
 
-const fruitdown = require('fruitdown')
-const opts = {
-    leveldown: fruitdown
-  , location: 'pokertell:parsed'
-  , encoding: require('../../default-encoding')
-}
-const store = hyper ? new HyperLog(opts) : new LevelUp(opts)
-const log = require('../../')({ log: store })
 const HandHistoryImporter = require('./components/hh-importer')
 const HandHistoryExplorer = require('./components/hh-explorer')
 
@@ -40,13 +31,13 @@ render(
 )
 
 function destroyDatabase() {
-  store.destroy(err => {
+  log._log.destroy(err => {
     if (err) return console.error(err)
     console.log('db destroyed')
   })
 }
 
-const street = 'preflop'
+const street = 'flop'
 function injectFooter(hand) {
   const processed = handProcessor(hand, street)
   return handProcessor.renderProcessed(processed)
