@@ -18,7 +18,7 @@ function keyStream({ log, keys }) {
   var i = 0
   function onobj(size, cb) {
     if (i === keys.length) return cb(null, null)
-    log.get(keys[i++], null, cb)
+    log.get(keys[i++], {}, cb)
   }
   return from2.obj(onobj)
 }
