@@ -27,7 +27,7 @@ class LevelUp extends EventEmitter {
   createReadStream({ live, since, encoding } = {}) {
     // TODO: https://github.com/dominictarr/level-live-stream
     if (live) throw new Error('live stream not supported ATM')
-    return this._db.createValueStream({ gte: since, valueEncoding: encoding })
+    return this._db.createReadStream({ gte: since, valueEncoding: encoding })
   }
 
   range({ gt, gte, limit, reverse }, cb) {
