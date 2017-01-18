@@ -16,10 +16,11 @@
     "from2": "~2.3.0",
     "fruitdown": "~1.0.2",
     "hyperlog": "~4.11.0",
+    "level-js": "~2.2.4",
     "leveldown": "~1.5.0",
     "levelup": "~1.3.3",
     "money-encoder": "~0.1.0",
-    "protocol-buffers": "~3.1.8"
+    "protocol-buffers": "~3.2.1"
   },
   "devDependencies": {
     "concat-stream": "~1.5.2",

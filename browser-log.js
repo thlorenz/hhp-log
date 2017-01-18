@@ -1,11 +1,17 @@
 const HyperLog = require('./stores/hyperlog')
 const LevelUp = require('./stores/levelup')
 const fruitdown = require('fruitdown')
+const leveljs = require('level-js')
 const defaultEncoding = require('./default-encoding')
 
-module.exports = function browserLog({ location, encoding = defaultEncoding, hyper }) {
+module.exports = function browserLog({
+    location
+  , encoding = defaultEncoding
+  , hyper
+  , fruit
+}) {
   const opts = {
-      leveldown: fruitdown
+      leveldown: fruit ? fruitdown : leveljs
     , location
     , encoding
   }

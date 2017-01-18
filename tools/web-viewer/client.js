@@ -6,9 +6,9 @@ require('preact/devtools')
 const ocat = require('ocat')
 const showSummary = false
 
-const hyper = false
 const location = 'pokertell:parsed'
-const log = require('../../browser-log')({ location, hyper })
+const encoding = 'json'
+const log = require('../../browser-log')({ location, encoding })
 
 const HandHistoryImporter = require('./components/hh-importer')
 const HandHistoryExplorer = require('./components/hh-explorer')
