@@ -3,11 +3,6 @@ const levelup = require('levelup')
 const concatStream = require('concat-stream')
 const assert = require('assert')
 
-function getKey(value) {
-  const info = value.info
-  return info.room + ':' + info.handid
-}
-
 class LevelUp extends EventEmitter {
   constructor({ location, leveldown, encoding }) {
     super()
@@ -21,7 +16,7 @@ class LevelUp extends EventEmitter {
   }
 
   append(value, opts, cb) {
-    this._db.put(getKey(value), value, opts, cb)
+    this._db.put(this.getKey(value), value, opts, cb)
   }
 
   createReadStream({ live, since, encoding } = {}) {
@@ -49,11 +44,16 @@ class LevelUp extends EventEmitter {
   }
 
   getHand(data) {
-    return data
+    return (data && data.value) || data
   }
 
   destroy(cb) {
     this._leveldown.destroy(this._location, cb)
+  }
+
+  getKey(value) {
+    const info = value.info
+    return info.room + ':' + info.handid
   }
 }
 

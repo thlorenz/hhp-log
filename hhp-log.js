@@ -23,21 +23,17 @@ function keyStream({ log, keys }) {
   return from2.obj(onobj)
 }
 
-// TODO: need to somehow keep indexes:
-//  - tourney#
-//  - game#
-//  - date+time (for ranges)
-// Not sure if to store in separate log or just keep in memory and up to date, so
-// consumer can store the index however they please.
-//
 class ParsedHandsLog extends EventEmitter {
   constructor({ log } = {}) {
     super()
 
     this._log = log
-    this._log.on('add', n => this.emit('add', n))
     this._hands = new Set()
     this._initialized = false
+  }
+
+  getKey(val) {
+    return this._log.getKey(val)
   }
 
   addHands(hands, done) {
@@ -67,6 +63,10 @@ class ParsedHandsLog extends EventEmitter {
       if (err) return done(err)
       this._append(hand, done)
     })
+  }
+
+  get(id, cb) {
+    return this._log.get(id, {}, cb)
   }
 
   _append(hand, done) {
@@ -114,8 +114,8 @@ class ParsedHandsLog extends EventEmitter {
     })
   }
 
-  getHand(h) {
-    return this._log.getHand(h)
+  getHand(h, cb) {
+    return this._log.getHand(h, cb)
   }
 
   _summary() {

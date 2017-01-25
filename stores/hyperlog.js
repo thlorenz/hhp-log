@@ -4,6 +4,7 @@ const hyperlog = require('hyperlog')
 
 const assert = require('assert')
 
+// TODO: need to expose getKey like we do for LevelUp
 class HyperLog extends EventEmitter {
   constructor({ location, leveldown, encoding }) {
     super()
