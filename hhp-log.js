@@ -6,14 +6,6 @@ function inspect(obj, depth) {
   console.log(require('util').inspect(obj, false, depth || 5, true))
 }
 
-function entryId(info) {
-  return info.room + ':' + info.gameno + ':' + info.handid
-}
-
-function getTimeStamp(info) {
-  return new Date(info.year, info.month - 1, info.day, info.hour, info.min, info.sec)
-}
-
 function keyStream({ log, keys }) {
   var i = 0
   function onobj(size, cb) {
@@ -26,10 +18,7 @@ function keyStream({ log, keys }) {
 class ParsedHandsLog extends EventEmitter {
   constructor({ log } = {}) {
     super()
-
     this._log = log
-    this._hands = new Set()
-    this._initialized = false
   }
 
   getKey(val) {
@@ -58,33 +47,37 @@ class ParsedHandsLog extends EventEmitter {
   }
 
   addHand(hand, done) {
-    if (this._initialized) return setTimeout(() => this._append(hand, done), 0)
-    this._init(err => {
-      if (err) return done(err)
-      this._append(hand, done)
-    })
+    this._append(hand, done)
   }
 
   get(id, cb) {
     return this._log.get(id, {}, cb)
   }
 
-  _append(hand, done) {
-    // check if hand is newer than any of the ones added before
-    // if it isn't ensure it hasn't been added yet
-    if (getTimeStamp(hand.info) > this._newest || !this._hands.has(entryId(hand.info))) {
-      // track hand synchronously to avoid race conditions, in case it can't be
-      // added it is _untracked_ again @see _onadded
-      this._trackHand(hand.info)
-      this._log.append(
-          Object.assign({}, hand, { version: VERSION })
-        , {}
-        , err => { this._onadded(err, hand); done(err) }
-      )
-    } else {
-      this.emit('skipped', hand)
-      done()
+  _handExists(hand, cb) {
+    const key = this._log.getKey(hand)
+    function onhand(err, v) {
+      if (!err) return cb(null, true)
+      if (err.notFound) return cb(null, false)
+      cb(err)
     }
+    this.get(key, onhand)
+  }
+
+  _append(hand, done) {
+    this._handExists(hand, (err, res) => {
+      if (err) return done(err)
+      if (!res) {
+        this._log.append(
+            Object.assign({}, hand, { version: VERSION })
+          , {}
+          , err => { this._onadded(err, hand); done(err) }
+        )
+      } else {
+        this.emit('skipped', hand)
+        done()
+      }
+    })
   }
 
   tail({ live, encoding, keys } = {}) {
@@ -106,55 +99,12 @@ class ParsedHandsLog extends EventEmitter {
       .on('data', x => inspect(x))
   }
 
-  summary(cb) {
-    if (this._initialized) return cb(null, this._summary())
-    this._init(err => {
-      if (err) return cb(err)
-      cb(null, this._summary())
-    })
-  }
-
   getHand(h, cb) {
     return this._log.getHand(h, cb)
   }
 
-  _summary() {
-    return {
-        hands: this._hands
-      , newest: this._newest
-      , total: this._hands.size
-    }
-  }
-
-  _init(cb) {
-    this.emit('initializing')
-
-    // Called the first time a hand is added to avoid adding duplicates.
-    // tail through all entries in the db and do the following
-    //  - record the newest entry time
-    //  - create a set of ids of hands contained
-    this.tail()
-      .on('data', x => this._trackHand(this._log.getHand(x).info))
-      .on('error', cb)
-      .on('end', x => {
-        this._initialized = true
-        this.emit('initialized')
-        cb()
-      })
-  }
-
-  _trackHand(info) {
-    const timestamp = getTimeStamp(info)
-    if (this._newest == null || timestamp > this._newest) this._newest = timestamp
-    this._hands.add(entryId(info))
-    this.emit('tracked', this._hands.size)
-  }
-
   _onadded(err, hand) {
-    if (err) {
-      this._hands.delete(entryId(hand.info))
-      return this.emit('error', err)
-    }
+    if (err) return this.emit('error', err)
     this.emit('added', hand)
   }
 }
